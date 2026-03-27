@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DS Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --pink: #fc72ff;
+    --pink-soft: #fdf0ff;
+    --pink-mid: #f9a8fb;
+    --pink-dark: #b014b0;
+    --blue: #4c82fb;
+    --blue-soft: #eef2ff;
+    --green: #40b66b;
+    --red: #f14f3e;
+
+    /* Light mode tokens */
+    --bg: #ffffff;
+    --bg2: #f5f5f8;
+    --bg3: #ebebf0;
+    --bg-nav: rgba(255,255,255,0.94);
+    --border: #e8e8ee;
+    --border2: #d0d0da;
+    --text: #111111;
+    --text2: #6b6b7b;
+    --text3: #adadbc;
+    --shadow-nav: 0 1px 0 rgba(0,0,0,0.07);
+
+    --nav-h: 56px;
+    --font: 'Pretendard', 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  /* Dark mode tokens */
+  html.dark {
+    --bg: #111113;
+    --bg2: #1c1c1f;
+    --bg3: #2a2a2e;
+    --bg-nav: rgba(17,17,19,0.94);
+    --border: #2e2e33;
+    --border2: #3e3e45;
+    --text: #f0f0f2;
+    --text2: #8e8e9e;
+    --text3: #55555f;
+    --shadow-nav: 0 1px 0 rgba(255,255,255,0.05);
+    --pink-soft: #2d1433;
+    --blue-soft: #0d1a3a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; transition: background .2s, color .2s; }
+
+  /* NAV — Toss style */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    height: var(--nav-h);
+    background: var(--bg-nav);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-nav);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px;
+    transition: background .2s, box-shadow .2s;
+  }
+  .nav-left { display: flex; align-items: center; gap: 0; }
+  .nav-logo {
+    width: 28px; height: 28px;
+    background: #fc72ff;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .nav-logo svg { width: 16px; height: 16px; fill: white; }
+  .nav-brand { font-size: 15px; font-weight: 700; color: var(--text); margin-right: 28px; letter-spacing: -.3px; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 6px 13px; height: auto;
+    display: flex; align-items: center;
+    font-size: 14px; font-weight: 500; color: var(--text2);
+    cursor: pointer; border: none; background: none;
+    border-radius: 10px;
+    transition: background .12s, color .12s; white-space: nowrap;
+  }
+  .nav-tab::after { display: none; }
+  .nav-tab:hover { background: var(--bg2); color: var(--text); }
+  .nav-tab.active { background: var(--bg3); color: var(--text); font-weight: 600; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-addr {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px; color: var(--text2);
+  }
+  /* Dark mode toggle */
+  .theme-toggle {
+    width: 56px; height: 30px; border-radius: 30px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    cursor: pointer; position: relative;
+    transition: background .25s, border-color .25s;
+    flex-shrink: 0; display: flex; align-items: center; padding: 3px;
+  }
+  .theme-toggle-thumb {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--bg); box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    transition: transform .25s cubic-bezier(.4,0,.2,1), background .25s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  html.dark .theme-toggle { background: #2e2e38; border-color: #3e3e48; }
+  html.dark .theme-toggle-thumb { transform: translateX(26px); background: #3a3a44; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .toggle-icon { width: 14px; height: 14px; }
+
+  /* LAYOUT */
+  .page { display: none; padding: 80px 24px 32px; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* SETUP CARD */
+  .setup-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+  .setup-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-group label { font-size: 12px; color: var(--text2); font-weight: 500; }
+  .field-group input {
+    height: 44px; padding: 0 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    font-family: var(--font); font-size: 14px; color: var(--text);
+    background: var(--bg); outline: none; transition: border-color .15s;
+  }
+  .field-group input:focus { border-color: var(--pink); }
+  .field-group input::placeholder { color: var(--text3); }
+  .field-hint { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* FILE ROWS */
+  .token-row { margin-bottom: 20px; }
+  .files-section { display: flex; flex-direction: column; gap: 20px; }
+  .file-row {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px;
+    position: relative; transition: border-color .15s;
+  }
+  .file-row:hover { border-color: var(--border2); }
+  .file-row-label {
+    grid-column: 1 / -1; font-size: 11px; font-weight: 600; color: var(--text3);
+    text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .file-row-label .file-badge {
+    width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center;
+    justify-content: center; font-size: 10px; font-weight: 700; color: white;
+  }
+  .file-remove-btn {
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text3); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+    flex-shrink: 0; align-self: flex-end; margin-bottom: 0;
+  }
+  .file-remove-btn:hover { border-color: var(--red); color: var(--red); background: #fff5f5; }
+  .add-file-btn {
+    width: 100%; height: 44px; margin-top: 20px;
+    border: 1.5px dashed var(--border2); border-radius: 14px;
+    background: transparent; color: var(--text2); font-family: var(--font);
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .add-file-btn:hover { border-color: var(--pink); color: var(--pink-dark); background: var(--pink-soft); }
+  .files-divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .run-btn {
+    width: 100%; height: 48px; margin-top: 16px;
+    background: #fc72ff;
+    color: white; font-family: var(--font); font-size: 15px; font-weight: 600;
+    border: none; border-radius: 16px; cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .run-btn:hover { opacity: .9; }
+  .run-btn:active { transform: scale(.99); }
+  .run-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .status-bar { margin-top: 10px; font-size: 12px; min-height: 16px; text-align: center; }
+  .status-bar.ok { color: var(--green); }
+  .status-bar.err { color: var(--red); }
+  .status-bar.loading { color: var(--text2); }
+
+  /* SECTION HEADER */
+  .section-hd { font-size: 12px; font-weight: 500; color: var(--text2); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 14px; }
+
+  /* METRIC CARDS */
+  .metrics-row { display: grid; gap: 12px; margin-bottom: 28px; }
+  .metrics-row.cols4 { grid-template-columns: repeat(4, 1fr); }
+  .metrics-row.cols3 { grid-template-columns: repeat(3, 1fr); }
+  .metrics-row.cols2 { grid-template-columns: repeat(2, 1fr); }
+  .metric-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 20px 22px;
+    transition: border-color .15s;
+  }
+  .metric-card:hover { border-color: var(--border2); }
+  .metric-card .label { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .metric-card .val { font-size: 26px; font-weight: 600; line-height: 1.1; }
+  .metric-card .sub { font-size: 12px; color: var(--text3); margin-top: 5px; }
+  .metric-card .delta { font-size: 12px; font-weight: 500; margin-top: 4px; }
+  .delta.up { color: var(--green); }
+  .delta.down { color: var(--red); }
+  .hbar { height: 6px; border-radius: 3px; background: var(--bg3); margin-top: 10px; overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+  /* TWO COL */
+  .two-col { display: grid; grid-template-columns: 1fr 360px; gap: 20px; margin-bottom: 28px; align-items: start; }
+  .two-col-wide { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+
+  /* CHART CARD */
+  .chart-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 22px;
+  }
+  .chart-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .chart-title { font-size: 12px; color: var(--text2); }
+  .chart-val { font-size: 26px; font-weight: 600; margin-bottom: 4px; }
+  .chart-sub { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+  .dur-btns { display: flex; gap: 4px; }
+  .dur-btn { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; border: none; background: none; color: var(--text2); cursor: pointer; transition: all .12s; }
+  .dur-btn.active { background: var(--bg3); color: var(--text); }
+  .chart-legend { display: flex; gap: 14px; margin-bottom: 12px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
+  .canvas-wrap { position: relative; width: 100%; }
+
+  /* STATS SIDEBAR */
+  .stats-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 22px;
+  }
+  .stats-title { font-size: 16px; font-weight: 600; margin-bottom: 18px; }
+  .stat-row { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 600; }
+  .stat-delta { font-size: 12px; font-weight: 500; margin-left: 6px; }
+  .pool-bar { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+  .pool-seg { height: 6px; border-radius: 3px; }
+  .pool-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+
+  /* TABLE */
+  .table-card { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 28px; }
+  .table-tabs { display: flex; gap: 2px; padding: 16px 20px 0; border-bottom: 1px solid var(--border); }
+  .ttab { padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .12s; }
+  .ttab.active { color: var(--text); border-bottom-color: var(--text); }
+  .ttab:hover { color: var(--text); }
+  .table-toolbar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .filter-btns { display: flex; gap: 6px; }
+  .fbtn { padding: 5px 12px; border-radius: 10px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: var(--bg); color: var(--text2); cursor: pointer; transition: all .12s; }
+  .fbtn:hover { border-color: var(--border2); color: var(--text); }
+  .fbtn.active { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 500; color: var(--text2); border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th:hover { color: var(--text); }
+  thead th .sort-ic { font-size: 10px; margin-left: 3px; opacity: .5; }
+  thead th.sorted .sort-ic { opacity: 1; color: var(--text); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg2); }
+  tbody td { padding: 12px 16px; font-size: 13px; white-space: nowrap; }
+  .td-name { font-weight: 500; }
+  .td-mono { font-family: var(--mono); font-size: 12px; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-a { background: #eef2ff; color: #3b5fe0; }
+  .badge-b { background: #f0fdf4; color: #15803d; }
+  .badge-both { background: #f9f0ff; color: #7c3aed; }
+  .badge-unused { background: #fff1f0; color: #cf1322; }
+  .tag-sell { color: var(--red); font-weight: 500; }
+  .tag-buy { color: var(--green); font-weight: 500; }
+  .mini-bar { display: flex; align-items: center; gap: 6px; }
+  .mini-bar-bg { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; }
+  .mini-bar-fill { height: 4px; background: var(--pink); border-radius: 2px; }
+  .pct-txt { font-size: 11px; color: var(--text3); min-width: 28px; }
+
+  /* DRILL DOWN */
+  .drill-panel {
+    display: none;
+    background: var(--bg2); border-radius: 14px; padding: 16px 20px; margin: 0 20px 16px;
+  }
+  .drill-panel.open { display: block; }
+  .drill-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .drill-name { font-size: 14px; font-weight: 600; }
+  .close-drill { background: none; border: none; cursor: pointer; color: var(--text2); font-size: 18px; line-height: 1; padding: 0 4px; }
+  .mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .ms { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .ms-label { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+  .ms-val { font-size: 15px; font-weight: 600; }
+  .variant-tbl table { font-size: 12px; }
+  .variant-tbl thead th { font-size: 11px; padding: 6px 12px; background: var(--bg); }
+  .variant-tbl tbody td { padding: 7px 12px; }
+
+  /* TEAM LIST */
+  .team-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .team-item:last-child { border-bottom: none; }
+  .team-rank { font-size: 12px; color: var(--text3); min-width: 18px; }
+  .team-name { font-size: 13px; font-weight: 500; flex: 1; margin: 0 12px; }
+  .team-inserts { font-size: 12px; color: var(--text2); margin-right: 10px; }
+  .pct-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--pink-soft); color: var(--pink-dark); }
+
+  /* FOOTER */
+  .table-footer { padding: 12px 20px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); }
+
+  /* HEALTH */
+  .health-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+  .health-card { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 20px 22px; }
+  .health-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .health-val { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+  .health-sub { font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .two-col { grid-template-columns: 1fr; }
+    .metrics-row.cols4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  }
+
+  @media (max-width: 768px) {
+    :root { --nav-h: 52px; }
+    nav { padding: 0 16px; }
+    .nav-brand { font-size: 14px; margin-right: 12px; }
+    .nav-tabs { gap: 2px; }
+    .nav-tab { padding: 5px 10px; font-size: 13px; }
+    .nav-addr { display: none; }
+    .page { padding: 32px 16px 40px; }
+    .setup-card { padding: 20px; }
+    .metrics-row.cols4 { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .metrics-row.cols3 { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .metrics-row.cols2 { grid-template-columns: 1fr; gap: 8px; }
+    .two-col { grid-template-columns: 1fr; gap: 14px; }
+    .two-col-wide { grid-template-columns: 1fr; gap: 14px; }
+    .health-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .file-row { grid-template-columns: 1fr auto; }
+    .file-row .field-group:first-of-type { grid-column: 1 / -1; }
+    .mini-stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .metric-card .val { font-size: 22px; }
+    .chart-card { padding: 16px; }
+    .stats-card { padding: 16px; }
+    .table-toolbar { flex-direction: column; align-items: flex-start; gap: 8px; }
+    thead th { padding: 8px 10px; font-size: 11px; }
+    tbody td { padding: 8px 10px; font-size: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    nav { padding: 0 12px; }
+    .nav-brand { display: none; }
+    .nav-tab { padding: 5px 8px; font-size: 12px; }
+    .theme-toggle { width: 48px; height: 26px; }
+    .theme-toggle-thumb { width: 20px; height: 20px; }
+    html.dark .theme-toggle-thumb { transform: translateX(22px); }
+    .page { padding: 24px 12px 32px; }
+    .setup-card { padding: 16px; border-radius: 16px; }
+    .metrics-row.cols4 { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .metric-card { padding: 14px 16px; border-radius: 14px; }
+    .metric-card .val { font-size: 20px; }
+    .section-hd { font-size: 11px; }
+    .health-grid { grid-template-columns: 1fr; }
+    .health-val { font-size: 24px; }
+    .drill-panel { margin: 0 0 12px; padding: 14px; }
+    .mini-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .table-tabs { padding: 12px 14px 0; gap: 0; overflow-x: auto; flex-wrap: nowrap; }
+    .ttab { padding: 7px 10px; font-size: 13px; white-space: nowrap; }
+    .table-wrap { -webkit-overflow-scrolling: touch; }
+    table { min-width: 520px; }
+    .run-btn { font-size: 14px; height: 44px; }
+    .add-file-btn { height: 40px; font-size: 13px; }
+    .field-group input { height: 40px; font-size: 13px; }
+    .file-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .file-row-label { grid-column: 1 / -1; }
+    .modal-box { padding: 22px 20px 18px; }
+    .loading-panel { padding: 16px; }
+  }
+
+  /* LOADING PANEL */
+  .loading-panel {
+    display: none; margin-top: 20px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px 22px;
+    overflow: hidden;
+  }
+  .loading-panel.visible { display: block; }
+  .loading-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .loading-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .loading-elapsed { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .loading-progress-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 18px; overflow: hidden; }
+  .loading-progress-bar {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--pink) 0%, var(--blue) 100%);
+    width: 0%; transition: width .5s ease;
+  }
+  .loading-steps { display: flex; flex-direction: column; gap: 0; }
+  .loading-step {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 9px 0; position: relative;
+  }
+  .loading-step:not(:last-child)::after {
+    content: ''; position: absolute; left: 10px; top: 30px;
+    width: 1px; height: calc(100% - 12px);
+    background: var(--border);
+  }
+  .step-icon {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; margin-top: 1px; transition: all .25s;
+  }
+  .step-icon.pending { background: var(--bg3); border: 1.5px solid var(--border2); }
+  .step-icon.running {
+    background: transparent;
+    border: 2px solid transparent;
+    border-top-color: var(--pink);
+    border-right-color: var(--pink);
+    animation: spin .7s linear infinite;
+  }
+  .step-icon.done { background: var(--text); border: 1.5px solid var(--text); }
+  .step-icon.done::after { content: ''; display: block; width: 5px; height: 8px; border: 1.5px solid white; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-1px); }
+  .step-icon.error { background: var(--red); border: 1.5px solid var(--red); color: white; font-weight: 700; font-size: 12px; }
+  .step-body { flex: 1; min-width: 0; }
+  .step-label {
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    transition: color .2s; line-height: 1.4;
+  }
+  .step-label.active { color: var(--text); }
+  .step-label.done-txt { color: var(--text2); }
+  .step-sub {
+    font-size: 11px; color: var(--text3); margin-top: 2px;
+    max-height: 0; overflow: hidden; transition: max-height .3s ease, opacity .3s;
+    opacity: 0;
+  }
+  .step-sub.visible { max-height: 40px; opacity: 1; }
+  .step-time { font-size: 11px; color: var(--text3); font-family: var(--mono); flex-shrink: 0; margin-top: 3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes stepIn { from { opacity:0; transform:translateX(-4px); } to { opacity:1; transform:translateX(0); } }
+  .step-anim { animation: stepIn .2s ease forwards; }
+
+  /* CONFIRM MODAL */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+    align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-box {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px 28px 24px; width: 380px; max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .modal-icon { width: 40px; height: 40px; border-radius: 50%; background: #fff5f5; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .modal-desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 22px; }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-btn-cancel { padding: 9px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all .12s; }
+  .modal-btn-cancel:hover { background: var(--bg2); color: var(--text); }
+  .modal-btn-confirm { padding: 9px 18px; border-radius: 12px; border: none; background: var(--red); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; color: white; transition: opacity .12s; }
+  .modal-btn-confirm:hover { opacity: .85; }
+
+  /* DARK MODE — component overrides */
+  html.dark .setup-card,
+  html.dark .metric-card,
+  html.dark .chart-card,
+  html.dark .stats-card,
+  html.dark .table-card,
+  html.dark .health-card,
+  html.dark .drill-panel { background: var(--bg2); border-color: var(--border); }
+
+  html.dark .file-row { background: var(--bg3); border-color: var(--border2); }
+  html.dark .field-group input { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+  html.dark .field-group input::placeholder { color: var(--text3); }
+  html.dark .add-file-btn { border-color: var(--border2); color: var(--text2); }
+  html.dark .add-file-btn:hover { border-color: var(--pink); color: var(--pink); background: #2d1433; }
+  html.dark .run-btn { background: #fc72ff; }
+
+  html.dark .metric { background: var(--bg3); }
+  html.dark .ms { background: var(--bg3); border-color: var(--border); }
+  html.dark tbody tr:hover { background: var(--bg3); }
+  html.dark .loading-panel { background: var(--bg2); border-color: var(--border); }
+  html.dark .modal-box { background: var(--bg2); border-color: var(--border2); box-shadow: 0 8px 40px rgba(0,0,0,.5); }
+  html.dark .modal-btn-cancel { background: var(--bg3); border-color: var(--border2); color: var(--text2); }
+  html.dark .modal-btn-cancel:hover { background: var(--bg); color: var(--text); }
+  html.dark .step-icon.done { background: var(--text); border-color: var(--text); }
+  html.dark .bar-bg, html.dark .hbar, html.dark .mini-bar-bg { background: var(--bg3); }
+  html.dark .loading-progress-wrap { background: var(--bg3); }
+  html.dark thead th { border-color: var(--border); }
+  html.dark tbody tr { border-color: var(--border); }
+  html.dark .table-tabs, html.dark .table-footer, html.dark .table-toolbar { border-color: var(--border); }
+  html.dark .stat-row { border-color: var(--border); }
+  html.dark .team-item { border-color: var(--border); }
+  html.dark .ttab.active { border-color: var(--text); color: var(--text); }
+  html.dark .nav-addr { background: var(--bg2); border-color: var(--border); }
+  html.dark .files-divider { background: var(--border); }
+  html.dark .badge-a { background: #0d1a3a; color: #7ba7f7; }
+  html.dark .badge-b { background: #0a1f12; color: #5bc87d; }
+  html.dark .badge-both { background: #1a0e2e; color: #c084fc; }
+  html.dark .badge-unused { background: #2a0d0a; color: #f87171; }
+
+  /* STEP 2 — Page selector */
+  .step-indicator {
+    display: flex; align-items: center; gap: 0; margin-bottom: 32px;
+  }
+  .step-dot {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
+    color: var(--text3);
+  }
+  .step-dot.active { color: var(--text); }
+  .step-dot.done { color: var(--green); }
+  .step-dot-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    background: var(--bg3); color: var(--text3); flex-shrink: 0;
+    transition: all .2s;
+  }
+  .step-dot.active .step-dot-num { background: var(--text); color: var(--bg); }
+  .step-dot.done .step-dot-num {
+    background: var(--green); color: white;
+  }
+  .step-dot.done .step-dot-num::after { content: '✓'; }
+  .step-dot.done .step-dot-label { display: none; }
+  .step-connector {
+    flex: 1; height: 1px; background: var(--border); margin: 0 12px; max-width: 48px;
+  }
+  .page-selector-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px; margin-bottom: 28px;
+  }
+  .page-selector-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .page-selector-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .file-pages-group { margin-bottom: 20px; }
+  .file-pages-group:last-child { margin-bottom: 0; }
+  .file-pages-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px;
+  }
+  .page-check-list { display: flex; flex-direction: column; gap: 8px; }
+  .page-check-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: 14px;
+    border: 1.5px solid var(--border); background: var(--bg2);
+    cursor: pointer; transition: border-color .12s, background .12s; user-select: none;
+  }
+  .page-check-item:hover { border-color: var(--border2); background: var(--bg3); }
+  .page-check-item.checked { border-color: var(--pink); background: var(--pink-soft); }
+  html.dark .page-check-item.checked { background: #2d1433; border-color: var(--pink); }
+  .page-check-box {
+    width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+    border: 1.5px solid var(--border2); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .12s;
+  }
+  .page-check-item.checked .page-check-box {
+    background: var(--pink); border-color: var(--pink);
+  }
+  .page-check-icon {
+    width: 10px; height: 10px; opacity: 0; transition: opacity .12s;
+  }
+  .page-check-item.checked .page-check-icon { opacity: 1; }
+  .page-check-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+  .page-check-item.checked .page-check-name { color: var(--pink-dark); }
+  html.dark .page-check-item.checked .page-check-name { color: #f0a0ff; }
+  .page-select-all {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .page-select-all-btn {
+    font-size: 12px; font-weight: 500; color: var(--pink-dark);
+    background: none; border: none; cursor: pointer; padding: 0;
+    transition: opacity .12s;
+  }
+  .page-select-all-btn:hover { opacity: .7; }
+  .page-count-badge {
+    font-size: 12px; color: var(--text3);
+  }
+  .page-count-badge span { font-weight: 600; color: var(--text2); }
+  .back-btn {
+    width: 100%; height: 44px; margin-top: 10px;
+    border: 1.5px solid var(--border2); border-radius: 14px;
+    background: transparent; color: var(--text2);
+    font-family: var(--font); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all .12s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .back-btn:hover { border-color: var(--border); color: var(--text); background: var(--bg2); }
+  .fetch-pages-btn {
+    width: 100%; height: 48px; margin-top: 16px;
+    background: #fc72ff; color: white;
+    font-family: var(--font); font-size: 15px; font-weight: 600;
+    border: none; border-radius: 16px; cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .fetch-pages-btn:hover { opacity: .9; }
+  .fetch-pages-btn:active { transform: scale(.99); }
+  .fetch-pages-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn .3s ease forwards; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+    </div>
+    <span class="nav-brand">DS Analytics</span>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="navHome" onclick="handleHomeTab(this)">홈</button>
+      <button class="nav-tab" id="navOverview" onclick="switchPage('overview',this)">Overview</button>
+      <button class="nav-tab" id="navComponents" onclick="switchPage('components',this)">Components</button>
+      <button class="nav-tab" id="navHealth" onclick="switchPage('health',this)">Health</button>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-addr" id="navStatus">연결 안 됨</div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="테마 전환">
+      <div class="theme-toggle-thumb" id="themeThumb">
+        <!-- 라이트: 해 아이콘 / 다크: 달 아이콘 -->
+        <svg id="iconLight" class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="#fc72ff" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg id="iconDark" class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" style="display:none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </div>
+    </button>
+  </div>
+</nav>
+
+<!-- Confirm modal -->
+<div class="modal-backdrop" id="resetModal">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f14f3e" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="modal-title">홈으로 이동하시겠어요?</div>
+    <div class="modal-desc">현재 분석 결과가 모두 초기화됩니다.<br>다시 분석하려면 Token과 File Key를 다시 입력해야 해요.</div>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="closeResetModal()">취소</button>
+      <button class="modal-btn-confirm" onclick="confirmReset()">초기화하고 이동</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ HOME PAGE -->
+<div class="page active" id="page-home">
+
+  <!-- Step indicator -->
+  <div class="step-indicator">
+    <div class="step-dot active" id="stepDot1">
+      <div class="step-dot-num" id="stepNum1">1</div>
+      <span class="step-dot-label">파일 연결</span>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step-dot" id="stepDot2">
+      <div class="step-dot-num" id="stepNum2">2</div>
+      <span class="step-dot-label">페이지 선택</span>
+    </div>
+  </div>
+
+  <!-- ── Step 1 ── -->
+  <div id="homeStep1">
+    <div class="setup-card">
+      <div class="setup-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Figma 연결 설정
+      </div>
+
+      <div class="token-row">
+        <div class="field-group">
+          <label>Personal Access Token</label>
+          <input type="password" id="token" placeholder="figd_xxxxxxxxxxxxxxxx"/>
+          <div class="field-hint">Figma → Settings → Security → Personal access tokens · File content: Read</div>
+        </div>
+      </div>
+
+      <div class="files-divider"></div>
+
+      <div class="files-section" id="fileRows"></div>
+
+      <button class="add-file-btn" id="addFileBtn" onclick="addFileRow()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        파일 추가하기
+      </button>
+
+      <button class="fetch-pages-btn" id="fetchPagesBtn" onclick="goToStep2()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        페이지 불러오기
+      </button>
+      <div class="status-bar" id="statusBar"></div>
+    </div>
+  </div>
+
+  <!-- ── Step 2 ── -->
+  <div id="homeStep2" style="display:none;">
+    <div class="page-selector-card">
+      <div class="page-selector-title">분석할 페이지를 선택하세요</div>
+      <div class="page-selector-sub">체크한 페이지만 집계에 포함돼요. Cover, Spec 등 문서 페이지는 제외하세요.</div>
+      <div id="pageCheckGroups"></div>
+      <button class="run-btn" id="runBtn" onclick="fetchAll()" style="margin-top:20px;">분석 실행</button>
+      <button class="back-btn" onclick="goToStep1()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        이전으로
+      </button>
+    </div>
+
+    <!-- Loading panel -->
+    <div class="loading-panel" id="loadingPanel">
+      <div class="loading-header">
+        <div class="loading-title" id="loadingTitle">분석 준비 중</div>
+        <div class="loading-elapsed" id="loadingElapsed">0s</div>
+      </div>
+      <div class="loading-progress-wrap">
+        <div class="loading-progress-bar" id="loadingBar"></div>
+      </div>
+      <div class="loading-steps" id="loadingSteps"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ OVERVIEW PAGE -->
+<div class="page" id="page-overview">
+  <div id="dashContent">
+
+    <!-- Library overview -->
+    <div class="section-hd">라이브러리 개요</div>
+    <div class="metrics-row cols4" style="margin-bottom:28px;">
+      <div class="metric-card"><div class="label">Total instances</div><div class="val" id="mTotal">—</div><div class="sub">두 파일 합산</div></div>
+      <div class="metric-card">
+        <div class="label">컴포넌트 커버리지</div>
+        <div class="val" id="mCoverage">—</div>
+        <div class="hbar"><div class="hbar-fill" id="coverFill" style="width:0%"></div></div>
+        <div class="sub" id="coverSub" style="margin-top:6px;"></div>
+      </div>
+      <div class="metric-card"><div class="label">총 구성요소</div><div class="val" id="mComps">—</div><div class="sub" id="mCompSub">선언된 주요 컴포넌트</div></div>
+      <div class="metric-card"><div class="label">미사용 컴포넌트</div><div class="val" id="mUnused">—</div><div class="sub" id="mUnusedSub">Deprecation 후보</div></div>
+    </div>
+
+    <!-- Chart + Stats -->
+    <div class="two-col" style="margin-bottom:28px;">
+      <div class="chart-card">
+        <div class="chart-hd">
+          <div>
+            <div class="chart-title">Component insertions</div>
+            <div class="chart-val" id="chartVal">—</div>
+            <div class="chart-sub" id="chartSub">추이</div>
+          </div>
+          <div class="dur-btns">
+            <button class="dur-btn" onclick="changeDur(30,this)">1M</button>
+            <button class="dur-btn active" onclick="changeDur(60,this)">2M</button>
+            <button class="dur-btn" onclick="changeDur(90,this)">3M</button>
+            <button class="dur-btn" onclick="changeDur(365,this)">1Y</button>
+          </div>
+        </div>
+        <div class="chart-legend" id="chartLegend"></div>
+        <div class="canvas-wrap" style="height:200px;"><canvas id="insertChart"></canvas></div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-title">Stats</div>
+        <div class="stat-row">
+          <div class="stat-label">Pool balances (파일 비중)</div>
+          <div class="pool-labels" id="poolLabelA" style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px;"></div>
+          <div class="pool-bar" id="poolA"></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label">총 스타일</div>
+          <div class="stat-val" id="sStyles">—</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label">이번 주 활동 (추정)</div>
+          <div class="stat-val" id="sWeekly">—</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label">Detach rate</div>
+          <div class="stat-val">0% <span class="stat-delta" style="color:var(--green)">안전</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Per-file -->
+    <div class="section-hd">파일별 현황</div>
+    <div id="perFileRow" class="metrics-row cols2" style="margin-bottom:28px;"></div>
+
+    <!-- Top teams -->
+    <div class="section-hd">Top teams</div>
+    <div class="table-card" style="margin-bottom:28px;">
+      <div style="padding:18px 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <span style="font-size:13px;font-weight:500;" id="teamTotal">— 팀</span>
+          <span style="font-size:11px;color:var(--text3);">inserts 기준 정렬</span>
+        </div>
+        <div id="teamList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ COMPONENTS PAGE -->
+<div class="page" id="page-components">
+  <div id="noDataMsg" style="text-align:center;padding:80px 20px;color:var(--text3);">
+    <div style="font-size:40px;margin-bottom:12px;">📊</div>
+    <div>Overview 탭에서 먼저 분석을 실행해주세요.</div>
+  </div>
+  <div id="compContent" style="display:none;">
+    <div class="table-card">
+      <div class="table-tabs">
+        <span class="ttab active" onclick="showCTab('all',this)">전체</span>
+        <span class="ttab" id="ttA" onclick="showCTab('A',this)">Product A</span>
+        <span class="ttab" id="ttB" onclick="showCTab('B',this)">Product B</span>
+        <span class="ttab" onclick="showCTab('top',this)">Top 10</span>
+        <span class="ttab" onclick="showCTab('unused',this)">미사용</span>
+      </div>
+      <div class="table-toolbar">
+        <div style="font-size:12px;color:var(--text2);" id="compCount">—개 컴포넌트</div>
+        <div style="font-size:11px;color:var(--text3);">행 클릭 → 변형 드릴다운</div>
+      </div>
+
+      <div class="drill-panel" id="drillPanel">
+        <div class="drill-hd">
+          <div class="drill-name" id="drillName">—</div>
+          <button class="close-drill" onclick="closeDrill()">✕</button>
+        </div>
+        <div class="mini-stats">
+          <div class="ms"><div class="ms-label">Total instances</div><div class="ms-val" id="dTotal">—</div></div>
+          <div class="ms"><div class="ms-label">Total variants</div><div class="ms-val" id="dVariants">—</div></div>
+          <div class="ms"><div class="ms-label">사용 파일</div><div class="ms-val" id="dFiles">—</div></div>
+          <div class="ms"><div class="ms-label">Detaches</div><div class="ms-val" id="dDetach">0</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);font-weight:500;margin-bottom:8px;">변형별 분석 (Variants breakdown)</div>
+        <div class="variant-tbl" id="variantTbl"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:8%;"><span>#</span></th>
+              <th style="width:28%;" onclick="sortBy('name')">컴포넌트 <span class="sort-ic" id="s-name"></span></th>
+              <th style="width:12%;">파일</th>
+              <th style="width:10%;text-align:right;" onclick="sortBy('variants')">Variants <span class="sort-ic" id="s-variants"></span></th>
+              <th style="width:14%;text-align:right;" onclick="sortBy('instances')">Total instances <span class="sort-ic" id="s-instances">↓</span></th>
+              <th style="width:12%;text-align:right;" onclick="sortBy('inserts')">Inserts <span class="sort-ic" id="s-inserts"></span></th>
+              <th style="width:10%;text-align:right;" onclick="sortBy('detaches')">Detaches <span class="sort-ic" id="s-detaches"></span></th>
+              <th style="width:16%;">비율</th>
+            </tr>
+          </thead>
+          <tbody id="compTableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer" id="compFooter"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ HEALTH PAGE -->
+<div class="page" id="page-health">
+  <div id="noHealthMsg" style="text-align:center;padding:80px 20px;color:var(--text3);">
+    <div style="font-size:40px;margin-bottom:12px;">❤️</div>
+    <div>Overview 탭에서 먼저 분석을 실행해주세요.</div>
+  </div>
+  <div id="healthContent" style="display:none;">
+    <div class="section-hd">DS 건강 지표</div>
+    <div class="health-grid">
+      <div class="health-card">
+        <div class="health-label">Adoption score</div>
+        <div class="health-val" id="hAdopt">—</div>
+        <div class="health-sub">사용된 컴포넌트 / 전체 선언</div>
+        <div class="hbar"><div class="hbar-fill" id="hAdoptBar" style="width:0%"></div></div>
+      </div>
+      <div class="health-card">
+        <div class="health-label">미사용 비율</div>
+        <div class="health-val" id="hUnused">—</div>
+        <div class="health-sub">전체 컴포넌트 중 미사용</div>
+        <div class="hbar"><div class="hbar-fill" id="hUnusedBar" style="width:0%;background:var(--red);"></div></div>
+      </div>
+      <div class="health-card">
+        <div class="health-label">Top 5 집중도</div>
+        <div class="health-val" id="hConc">—</div>
+        <div class="health-sub">상위 5개가 차지하는 인스턴스 비중</div>
+        <div class="hbar"><div class="hbar-fill" id="hConcBar" style="width:0%;background:#f59e0b;"></div></div>
+      </div>
+      <div class="health-card">
+        <div class="health-label">Detach rate</div>
+        <div class="health-val">0%</div>
+        <div class="health-sub">detach / insert 비율 (파일 API 미지원)</div>
+        <div class="hbar"><div class="hbar-fill" style="width:0%;background:var(--red);"></div></div>
+      </div>
+      <div class="health-card">
+        <div class="health-label">커버리지</div>
+        <div class="health-val" id="hCover">—</div>
+        <div class="health-sub">사용 컴포넌트 / 전체 선언</div>
+        <div class="hbar"><div class="hbar-fill" id="hCoverBar" style="width:0%"></div></div>
+      </div>
+      <div class="health-card">
+        <div class="health-label">평균 인스턴스 / 컴포넌트</div>
+        <div class="health-val" id="hAvg">—</div>
+        <div class="health-sub">사용된 컴포넌트 기준</div>
+        <div class="hbar"><div class="hbar-fill" id="hAvgBar" style="width:0%;background:var(--pink);"></div></div>
+      </div>
+    </div>
+
+    <div class="section-hd">Top 10 컴포넌트</div>
+    <div class="two-col-wide">
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:14px;">인스턴스 분포 (상위 10개)</div>
+        <div class="canvas-wrap" style="height:260px;"><canvas id="topChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:14px;">파일별 인스턴스 비중</div>
+        <div style="display:flex;justify-content:center;align-items:center;height:260px;">
+          <div class="canvas-wrap" style="height:220px;width:220px;"><canvas id="pieChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let allRows = [], totInst = 0, curSort = { col: 'instances', dir: -1 }, curCTab = 'all';
+let chartInst = null, topChartInst = null, pieChartInst = null, curDur = 60;
+let fileCount = 0;
+
+const FILE_COLORS = ['#fc72ff','#4c82fb','#40b66b','#f59e0b','#f14f3e','#8b5cf6','#06b6d4','#ec4899'];
+const FILE_BADGE_COLORS = FILE_COLORS;
+const FILE_LABELS_BG = ['#fdf0ff','#eef2ff','#f0fdf4','#fef3c7','#fff1f0','#f5f3ff','#e0f7fa','#fce7f3'];
+const FILE_LABELS_TXT = ['#b014b0','#3b5fe0','#15803d','#92400e','#cf1322','#6d28d9','#0e7490','#9d174d'];
+
+// ── File row management ─────────────────────────────────────────────
+function getFileIndex(el) { return parseInt(el.closest('.file-row').dataset.idx); }
+
+function addFileRow(defaultName, defaultKey, isFirst) {
+  const idx = fileCount++;
+  const color = FILE_COLORS[idx % FILE_COLORS.length];
+  const label = String.fromCharCode(65 + idx); // A, B, C...
+  const container = document.getElementById('fileRows');
+
+  const row = document.createElement('div');
+  row.className = 'file-row';
+  row.dataset.idx = idx;
+  row.innerHTML = `
+    <div class="file-row-label">
+      <span class="file-badge" style="background:${color};">${label}</span>
+      파일 ${label} ${isFirst ? '<span style="color:var(--pink);margin-left:4px;">필수</span>' : ''}
+      <span class="scope-badge" id="scopeBadge_${idx}" style="display:none;margin-left:8px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;background:#E6F1FB;color:#0C447C;"></span>
+    </div>
+    <div class="field-group">
+      <label>파일 이름</label>
+      <input type="text" data-field="name" value="${defaultName || '파일 ' + label}" placeholder="파일 이름"/>
+    </div>
+    <div class="field-group">
+      <label>File Key 또는 URL</label>
+      <input type="text" data-field="key" placeholder="전체 URL 또는 특정 페이지 URL" value="${defaultKey || ''}"
+        oninput="updateScopeBadge(this, ${idx})"/>
+    </div>
+    ${!isFirst ? `<button class="file-remove-btn" onclick="removeFileRow(this)" title="삭제">×</button>` : `<div style="width:32px;flex-shrink:0;"></div>`}
+  `;
+  container.appendChild(row);
+  updateAddBtn();
+
+  // animate in
+  row.style.opacity = '0'; row.style.transform = 'translateY(6px)';
+  requestAnimationFrame(() => {
+    row.style.transition = 'opacity .2s ease, transform .2s ease';
+    row.style.opacity = '1'; row.style.transform = 'translateY(0)';
+  });
+}
+
+function removeFileRow(btn) {
+  const row = btn.closest('.file-row');
+  row.style.transition = 'opacity .15s, transform .15s';
+  row.style.opacity = '0'; row.style.transform = 'translateY(-4px)';
+  setTimeout(() => { row.remove(); updateAddBtn(); }, 160);
+}
+
+function updateAddBtn() {
+  const rows = document.querySelectorAll('.file-row');
+  const btn = document.getElementById('addFileBtn');
+  btn.style.display = rows.length >= 8 ? 'none' : 'flex';
+}
+
+function updateScopeBadge(input, idx) {
+  const badge = document.getElementById(`scopeBadge_${idx}`);
+  if (!badge) return;
+  const raw = input.value.trim();
+  if (!raw) { badge.style.display = 'none'; return; }
+  const { nodeId } = parseUrl(raw);
+  badge.style.display = 'inline';
+  if (nodeId) {
+    badge.textContent = '특정 페이지만 분석';
+    badge.style.background = '#E1F5EE';
+    badge.style.color = '#085041';
+  } else {
+    badge.textContent = '전체 페이지 분석';
+    badge.style.background = '#FAEEDA';
+    badge.style.color = '#633806';
+  }
+}
+
+function getFileRows() {
+  return Array.from(document.querySelectorAll('.file-row')).map(row => {
+    const raw = row.querySelector('[data-field="key"]').value.trim();
+    const { fileKey, nodeId } = parseUrl(raw);
+    return {
+      name: row.querySelector('[data-field="name"]').value.trim() || '파일',
+      key: fileKey,
+      nodeId: nodeId,
+      raw: raw
+    };
+  });
+}
+
+// ── Theme ───────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('ds-theme', isDark ? 'dark' : 'light');
+  document.getElementById('iconLight').style.display = isDark ? 'none' : 'block';
+  document.getElementById('iconDark').style.display = isDark ? 'block' : 'none';
+  // Chart.js 차트 텍스트 색 업데이트
+  const tickColor = isDark ? '#8e8e9e' : '#999';
+  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  [chartInst, topChartInst].forEach(c => {
+    if (!c) return;
+    Object.values(c.options.scales || {}).forEach(scale => {
+      if (scale.ticks) scale.ticks.color = tickColor;
+      if (scale.grid) scale.grid.color = gridColor;
+    });
+    c.update('none');
+  });
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('ds-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    document.getElementById('iconLight').style.display = 'none';
+    document.getElementById('iconDark').style.display = 'block';
+  }
+}
+
+// ── Nav ────────────────────────────────────────────────────────────
+let _hasResults = false;
+let _fetchedPages = {}; // fileKey → [{id, name}]
+
+// ── Step 1 → Step 2 ──────────────────────────────────────────────
+async function goToStep2() {
+  const token = $('token').value.trim();
+  const files = getFileRows();
+  const validFiles = files.filter(f => f.key);
+
+  if (!token) { setStatus('Personal Access Token을 입력해주세요.', 'err'); return; }
+  if (validFiles.length === 0) { setStatus('최소 1개의 파일 Key를 입력해주세요.', 'err'); return; }
+
+  const btn = $('fetchPagesBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" style="animation:spin .7s linear infinite"><path d="M12 2a10 10 0 0 1 10 10"/></svg> 페이지 불러오는 중...';
+  setStatus('', '');
+
+  try {
+    _fetchedPages = {};
+    for (const f of validFiles) {
+      const meta = await figmaGet(`https://api.figma.com/v1/files/${f.key}?depth=1`, token);
+      const pages = (meta.document?.children || []).filter(n => n.type === 'CANVAS');
+      _fetchedPages[f.key] = { name: f.name, pages, nodeId: f.nodeId };
+    }
+    renderPageCheckboxes(validFiles);
+    // Step 1 → Step 2 전환
+    $('homeStep1').style.display = 'none';
+    $('homeStep2').style.display = '';
+    // Step indicator 업데이트
+    $('stepDot1').className = 'step-dot done';
+    $('stepNum1').textContent = '';
+    $('stepDot2').className = 'step-dot active';
+  } catch(e) {
+    setStatus(e.message, 'err');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg> 페이지 불러오기';
+}
+
+function goToStep1() {
+  $('homeStep2').style.display = 'none';
+  $('homeStep1').style.display = '';
+  $('stepDot1').className = 'step-dot active';
+  $('stepNum1').textContent = '1';
+  $('stepDot2').className = 'step-dot';
+}
+
+function renderPageCheckboxes(validFiles) {
+  const container = $('pageCheckGroups');
+  container.innerHTML = '';
+
+  validFiles.forEach(f => {
+    const data = _fetchedPages[f.key];
+    if (!data) return;
+    const { pages } = data;
+    const color = FILE_COLORS[validFiles.indexOf(f) % FILE_COLORS.length];
+
+    const group = document.createElement('div');
+    group.className = 'file-pages-group';
+    group.dataset.key = f.key;
+
+    const checkedCount = () => group.querySelectorAll('.page-check-item.checked').length;
+
+    group.innerHTML = `
+      <div class="file-pages-label">
+        <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0;"></span>
+        ${f.name}
+      </div>
+      <div class="page-select-all">
+        <span class="page-count-badge" id="countBadge_${f.key.slice(0,8)}"><span>${pages.length}</span>개 중 <span id="checkedCount_${f.key.slice(0,8)}">${pages.length}</span>개 선택됨</span>
+        <button class="page-select-all-btn" onclick="toggleAllPages('${f.key}', this)">전체 해제</button>
+      </div>
+      <div class="page-check-list" id="pageList_${f.key.slice(0,8)}"></div>
+    `;
+    container.appendChild(group);
+
+    const list = group.querySelector('.page-check-list');
+    pages.forEach(page => {
+      const item = document.createElement('div');
+      item.className = 'page-check-item checked';
+      item.dataset.pageId = page.id;
+      item.dataset.pageName = page.name;
+      item.innerHTML = `
+        <div class="page-check-box">
+          <svg class="page-check-icon" viewBox="0 0 12 10" fill="none">
+            <polyline points="1 5 4.5 8.5 11 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="page-check-name">${page.name}</span>
+      `;
+      item.onclick = () => {
+        item.classList.toggle('checked');
+        updateCheckedCount(f.key, group, pages.length);
+      };
+      list.appendChild(item);
+    });
+  });
+}
+
+function updateCheckedCount(key, group, total) {
+  const checked = group.querySelectorAll('.page-check-item.checked').length;
+  const shortKey = key.slice(0,8);
+  const el = $(`checkedCount_${shortKey}`);
+  if (el) el.textContent = checked;
+  const allBtn = group.querySelector('.page-select-all-btn');
+  if (allBtn) allBtn.textContent = checked === total ? '전체 해제' : '전체 선택';
+}
+
+function toggleAllPages(key, btn) {
+  const group = btn.closest('.file-pages-group');
+  const items = group.querySelectorAll('.page-check-item');
+  const allChecked = [...items].every(i => i.classList.contains('checked'));
+  items.forEach(i => {
+    if (allChecked) i.classList.remove('checked');
+    else i.classList.add('checked');
+  });
+  const data = _fetchedPages[key];
+  updateCheckedCount(key, group, data?.pages?.length || 0);
+}
+
+function switchPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+function handleHomeTab(el) {
+  if (_hasResults) {
+    // 분석 완료 상태 → 컨펌 모달
+    $('resetModal').classList.add('open');
+  } else {
+    // 분석 전 → 그냥 이동
+    switchPage('home', el);
+  }
+}
+
+function closeResetModal() {
+  $('resetModal').classList.remove('open');
+}
+
+function confirmReset() {
+  closeResetModal();
+  _hasResults = false;
+  _fetchedPages = {};
+  allRows = []; totInst = 0;
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  if (topChartInst) { topChartInst.destroy(); topChartInst = null; }
+  if (pieChartInst) { pieChartInst.destroy(); pieChartInst = null; }
+  $('token').value = '';
+  $('fileRows').innerHTML = '';
+  fileCount = 0;
+  addFileRow('Product A', '', true);
+  $('navStatus').textContent = '연결 안 됨';
+  setStatus('', '');
+  $('loadingPanel').classList.remove('visible');
+  // Step 1로 리셋
+  goToStep1();
+  switchPage('home', $('navHome'));
+}
+
+// 모달 바깥 클릭 시 닫기
+document.addEventListener('click', e => {
+  const modal = $('resetModal');
+  if (modal && modal.classList.contains('open') && e.target === modal) {
+    closeResetModal();
+  }
+});
+
+// ── Helpers ────────────────────────────────────────────────────────
+function parseUrl(v) {
+  v = v.trim();
+  // node-id 추출 (있을 경우)
+  const nodeMatch = v.match(/[?&]node-id=([^&]+)/);
+  const nodeId = nodeMatch ? decodeURIComponent(nodeMatch[1]).replace(/-/g, ':') : null;
+  // file key 추출
+  const clean = v.split('?')[0].split('#')[0];
+  const keyMatch = clean.match(/\/(?:design|file)\/([a-zA-Z0-9]+)/);
+  const fileKey = keyMatch ? keyMatch[1] : clean;
+  return { fileKey, nodeId };
+}
+function $(id) { return document.getElementById(id); }
+function ss(id, txt) { const el=$(id); if(el) el.textContent = txt; }
+function sv(id, w, color) { let el = $(id); if(!el) return; el.style.width = Math.min(w, 100) + '%'; if (color) el.style.background = color; }
+function setStatus(msg, t) { let el = $('statusBar'); el.textContent = msg; el.className = 'status-bar ' + (t || ''); }
+function colorForPct(p) { return p >= 70 ? '#40b66b' : p >= 40 ? '#f59e0b' : '#f14f3e'; }
+
+// ── Loading Panel ──────────────────────────────────────────────────
+let _elapsedTimer = null;
+let _startTime = 0;
+let _stepDefs = [];
+let _stepEls = [];
+
+function buildSteps(fileNames) {
+  _stepDefs = [
+    { id: 'auth',    label: 'Token 인증 확인',             sub: 'Figma API 권한 검증 중' },
+    ...fileNames.map((n, i) => ({
+      id: `fetch_${i}`, label: `${n} 파일 데이터 수신`,
+      sub: '노드 트리 전체 다운로드 중 (파일 크기에 따라 5~20초 소요)'
+    })),
+    ...fileNames.map((n, i) => ({
+      id: `parse_${i}`, label: `${n} 컴포넌트 파싱`,
+      sub: 'COMPONENT / INSTANCE 노드 순회 및 집계 중'
+    })),
+    { id: 'merge',   label: '데이터 병합 및 커버리지 계산', sub: '미사용 컴포넌트 · 커버리지 · 집중도 산출' },
+    { id: 'render',  label: '대시보드 렌더링',              sub: '차트 및 테이블 생성 중' },
+  ];
+
+  const container = $('loadingSteps');
+  container.innerHTML = '';
+  _stepEls = _stepDefs.map((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'loading-step';
+    el.innerHTML = `
+      <div class="step-icon pending" id="si_${s.id}"></div>
+      <div class="step-body">
+        <div class="step-label" id="sl_${s.id}">${s.label}</div>
+        <div class="step-sub" id="ss_${s.id}">${s.sub}</div>
+      </div>
+      <div class="step-time" id="st_${s.id}"></div>
+    `;
+    container.appendChild(el);
+    return el;
+  });
+}
+
+function stepSet(id, state, timeStr) {
+  const icon = $(`si_${id}`);
+  const label = $(`sl_${id}`);
+  const sub = $(`ss_${id}`);
+  const time = $(`st_${id}`);
+  if (!icon) return;
+  icon.className = `step-icon ${state}`;
+  if (state === 'running') {
+    label.className = 'step-label active step-anim';
+    sub.className = 'step-sub visible';
+    $('loadingTitle').textContent = label.textContent;
+  } else if (state === 'done') {
+    label.className = 'step-label done-txt';
+    sub.className = 'step-sub';
+    if (timeStr) time.textContent = timeStr;
+  } else if (state === 'error') {
+    label.className = 'step-label';
+    label.style.color = 'var(--red)';
+    icon.textContent = '!';
+  }
+  // progress bar
+  const doneCount = document.querySelectorAll('.step-icon.done').length;
+  const total = _stepDefs.length;
+  $('loadingBar').style.width = Math.round(doneCount / total * 100) + '%';
+}
+
+function startLoadingPanel(fileNames) {
+  buildSteps(fileNames);
+  $('loadingPanel').classList.add('visible');
+  $('loadingBar').style.width = '0%';
+  $('loadingTitle').textContent = '분석 준비 중';
+  _startTime = Date.now();
+  _elapsedTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - _startTime) / 1000);
+    $('loadingElapsed').textContent = s + 's';
+  }, 500);
+}
+
+function stopLoadingPanel(success) {
+  clearInterval(_elapsedTimer);
+  if (success) {
+    $('loadingBar').style.width = '100%';
+    $('loadingTitle').textContent = '분석 완료';
+    const total = Math.floor((Date.now() - _startTime) / 1000);
+    $('loadingElapsed').textContent = total + 's';
+    setTimeout(() => {
+      $('loadingPanel').classList.remove('visible');
+    }, 1800);
+  } else {
+    $('loadingTitle').textContent = '오류 발생';
+  }
+}
+
+function elapsed() {
+  return ((Date.now() - _startTime) / 1000).toFixed(1) + 's';
+}
+
+// ── Fetch ──────────────────────────────────────────────────────────
+async function figmaGet(url, token) {
+  const r = await fetch(url, { headers: { 'X-Figma-Token': token } });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.message || `HTTP ${r.status}`);
+  }
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('응답 파싱 실패 — 파일이 너무 큽니다. 특정 페이지 URL을 사용해주세요.'); }
+}
+
+// 체크된 페이지 배열을 직접 받아 분석
+async function fetchFileByPages(token, key, pages, label, onProgress) {
+  const inst = [], comps = {}, styleSet = new Set();
+
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    if (onProgress) onProgress(i, pages.length, page.name);
+    try {
+      const data = await figmaGet(
+        `https://api.figma.com/v1/files/${key}/nodes?ids=${encodeURIComponent(page.id)}&depth=99`, token
+      );
+      const node = data.nodes?.[page.id]?.document;
+      if (node) walk(node, inst, comps, styleSet);
+    } catch(e) {
+      try {
+        const data2 = await figmaGet(
+          `https://api.figma.com/v1/files/${key}/nodes?ids=${encodeURIComponent(page.id)}&depth=5`, token
+        );
+        const node2 = data2.nodes?.[page.id]?.document;
+        if (node2) walk(node2, inst, comps, styleSet);
+      } catch(_) {}
+    }
+  }
+
+  const iMap = {}, iNameMap = {};
+  inst.forEach(i => {
+    if (!i.cid) return;
+    iMap[i.cid] = (iMap[i.cid] || 0) + 1;
+    if (!iNameMap[i.cid]) iNameMap[i.cid] = i.name;
+  });
+  const declaredIds = new Set(Object.keys(comps));
+  const usedIds = new Set(Object.keys(iMap));
+  const unused = [...declaredIds].filter(id => !usedIds.has(id)).map(id => ({ id, name: comps[id].name }));
+  return { label, iMap, iNameMap, totalInst: inst.length, comps, declaredIds, usedIds, unused, styleCount: styleSet.size, pageCount: pages.length, scopeLabel: `${pages.length}개 페이지` };
+}
+
+function walk(n, inst, comps, styleSet) {
+  if (n.type === 'COMPONENT') comps[n.id] = { name: n.name };
+  if (n.type === 'INSTANCE') inst.push({ name: n.name, cid: n.componentId });
+  if (n.styles) Object.values(n.styles).forEach(sid => styleSet.add(sid));
+  if (n.children) n.children.forEach(c => walk(c, inst, comps, styleSet));
+}
+
+async function fetchFile(token, key, nodeId, label, onProgress) {
+  const inst = [], comps = {}, styleSet = new Set();
+
+  // nodeId가 있으면 해당 페이지 1개만, 없으면 전체 페이지 목록 조회
+  let pages = [];
+
+  if (nodeId) {
+    // 지정된 node-id → 해당 노드 이름 확인 후 단일 페이지로 분석
+    const meta = await figmaGet(`https://api.figma.com/v1/files/${key}?depth=1`, token);
+    const allPages = (meta.document?.children || []).filter(n => n.type === 'CANVAS');
+    // node-id가 페이지 자체이거나, 페이지 내 프레임일 수 있음 — 해당 페이지 찾기
+    const nodeIdColon = nodeId.replace(/-/g, ':');
+    const matchedPage = allPages.find(p => p.id === nodeIdColon || p.id === nodeId);
+    if (matchedPage) {
+      pages = [matchedPage];
+    } else {
+      // 페이지 ID가 아닌 경우(프레임 등) — 해당 노드가 속한 페이지를 직접 조회
+      pages = [{ id: nodeId, name: '지정 페이지' }];
+    }
+  } else {
+    // 전체 페이지 순회
+    const meta = await figmaGet(`https://api.figma.com/v1/files/${key}?depth=1`, token);
+    pages = (meta.document?.children || []).filter(n => n.type === 'CANVAS');
+    if (pages.length === 0) throw new Error(`[${label}] 페이지를 찾을 수 없습니다.`);
+  }
+
+  // 페이지별 분할 요청
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    if (onProgress) onProgress(i, pages.length, page.name);
+
+    try {
+      const data = await figmaGet(
+        `https://api.figma.com/v1/files/${key}/nodes?ids=${encodeURIComponent(page.id)}&depth=99`,
+        token
+      );
+      const node = data.nodes?.[page.id]?.document;
+      if (node) walk(node, inst, comps, styleSet);
+    } catch(e) {
+      try {
+        const data2 = await figmaGet(
+          `https://api.figma.com/v1/files/${key}/nodes?ids=${encodeURIComponent(page.id)}&depth=5`,
+          token
+        );
+        const node2 = data2.nodes?.[page.id]?.document;
+        if (node2) walk(node2, inst, comps, styleSet);
+      } catch(_) { /* 해당 페이지 스킵 */ }
+    }
+  }
+
+  const iMap = {}, iNameMap = {};
+  inst.forEach(i => {
+    if (!i.cid) return;
+    iMap[i.cid] = (iMap[i.cid] || 0) + 1;
+    if (!iNameMap[i.cid]) iNameMap[i.cid] = i.name;
+  });
+
+  const declaredIds = new Set(Object.keys(comps));
+  const usedIds = new Set(Object.keys(iMap));
+  const unused = [...declaredIds].filter(id => !usedIds.has(id)).map(id => ({ id, name: comps[id].name }));
+  const scopeLabel = nodeId ? `${pages[0]?.name || '지정 페이지'} (1개 페이지)` : `전체 ${pages.length}개 페이지`;
+
+  return { label, iMap, iNameMap, totalInst: inst.length, comps, declaredIds, usedIds, unused, styleCount: styleSet.size, pageCount: pages.length, scopeLabel };
+}
+
+async function fetchAll() {
+  const token = $('token').value.trim();
+  const files = getFileRows();
+  const validFiles = files.filter(f => f.key);
+
+  if (!token) { setStatus('Personal Access Token을 입력해주세요.', 'err'); return; }
+  if (validFiles.length === 0) { setStatus('최소 1개의 파일 Key를 입력해주세요.', 'err'); return; }
+
+  // Step 2에서 체크된 페이지 수집
+  const selectedPages = {}; // fileKey → [{id, name}]
+  validFiles.forEach(f => {
+    const shortKey = f.key.slice(0,8);
+    const items = document.querySelectorAll(`#pageList_${shortKey} .page-check-item.checked`);
+    selectedPages[f.key] = [...items].map(el => ({ id: el.dataset.pageId, name: el.dataset.pageName }));
+  });
+
+  // 선택된 페이지가 하나도 없는 파일 체크
+  const emptyFile = validFiles.find(f => (selectedPages[f.key] || []).length === 0);
+  if (emptyFile) { setStatus(`[${emptyFile.name}] 최소 1개 이상의 페이지를 선택해주세요.`, 'err'); return; }
+
+  $('runBtn').disabled = true;
+  setStatus('', '');
+  startLoadingPanel(validFiles.map(f => f.name));
+
+  try {
+    stepSet('auth', 'running');
+    await new Promise(r => setTimeout(r, 400));
+    stepSet('auth', 'done', elapsed());
+
+    const results = [];
+    for (let i = 0; i < validFiles.length; i++) {
+      const f = validFiles[i];
+      const pages = selectedPages[f.key] || [];
+      const scopeHint = `${pages.length}개 페이지 분석`;
+      stepSet(`fetch_${i}`, 'running');
+      const subEl = $(`ss_fetch_${i}`);
+      if (subEl) { subEl.textContent = `${scopeHint} — 데이터 수신 중`; subEl.className = 'step-sub visible'; }
+
+      const t0 = Date.now();
+      const result = await fetchFileByPages(token, f.key, pages, f.name, (pageIdx, pageTotal, pageName) => {
+        const sub = $(`ss_fetch_${i}`);
+        if (sub) { sub.textContent = `페이지 ${pageIdx + 1}/${pageTotal} — ${pageName}`; sub.className = 'step-sub visible'; }
+      });
+      const elapsed_s = ((Date.now()-t0)/1000).toFixed(1) + 's';
+      stepSet(`fetch_${i}`, 'done', elapsed_s);
+      const timeEl = $(`st_fetch_${i}`);
+      if (timeEl) timeEl.textContent = `${pages.length}개 페이지 · ${elapsed_s}`;
+      results.push(result);
+    }
+
+    // Step 3 — parse (fast, visual only)
+    for (let i = 0; i < validFiles.length; i++) {
+      stepSet(`parse_${i}`, 'running');
+      await new Promise(r => setTimeout(r, 180));
+      stepSet(`parse_${i}`, 'done', elapsed());
+    }
+
+    // Step 4 — merge
+    stepSet('merge', 'running');
+    await new Promise(r => setTimeout(r, 220));
+    stepSet('merge', 'done', elapsed());
+
+    // Step 5 — render
+    stepSet('render', 'running');
+    await new Promise(r => setTimeout(r, 100));
+    applyData(results);
+    stepSet('render', 'done', elapsed());
+
+    stopLoadingPanel(true);
+    setStatus(`분석 완료 — ${validFiles.map(f=>f.name).join(', ')}`, 'ok');
+    $('navStatus').textContent = validFiles.map(f=>f.name).join(' + ');
+    _hasResults = true;
+    // Overview 탭으로 자동 이동
+    switchPage('overview', $('navOverview'));
+    $('noDataMsg').style.display = 'none';
+    $('compContent').style.display = '';
+    $('noHealthMsg').style.display = 'none';
+    $('healthContent').style.display = '';
+
+  } catch (e) {
+    // mark current running step as error
+    document.querySelectorAll('.step-icon.running').forEach(el => {
+      el.className = 'step-icon error';
+      el.textContent = '!';
+    });
+    stopLoadingPanel(false);
+    setStatus(e.message, 'err');
+  }
+  $('runBtn').disabled = false;
+}
+
+function applyData(results) {
+  // ── 전체 instances 합산
+  totInst = results.reduce((s, r) => s + r.totalInst, 0);
+  const allStyles = results.reduce((s, r) => s + r.styleCount, 0);
+
+  // ── ID 기준 merged (componentId → { count, name, fileIdx })
+  const mergedById = {};
+  results.forEach((r, ri) => {
+    Object.entries(r.iMap).forEach(([cid, cnt]) => {
+      if (!mergedById[cid]) mergedById[cid] = { count: 0, name: r.iNameMap[cid] || cid, fileIdx: ri };
+      mergedById[cid].count += cnt;
+      if (mergedById[cid].fileIdx !== ri) mergedById[cid].fileIdx = 'multi';
+    });
+  });
+
+  // ── 선언된 컴포넌트 ID 집합
+  const allDeclaredIds = new Set(results.flatMap(r => [...r.declaredIds]));
+  const allComps = allDeclaredIds.size;
+
+  // ── 커버리지: 선언된 ID 중 실제 인스턴스가 있는 것
+  const usedDeclaredCount = [...allDeclaredIds].filter(id => mergedById[id]).length;
+  const cov = allComps > 0 ? Math.round(usedDeclaredCount / allComps * 100) : 0;
+
+  // ── 미사용 ({id, name}[])
+  const unusedAll = results.flatMap(r => r.unused);
+  const unusedRate = allComps > 0 ? Math.round(unusedAll.length / allComps * 100) : 0;
+
+  // ── 집중도 / 평균
+  const top5sum = Object.values(mergedById).map(v=>v.count).sort((a,b)=>b-a).slice(0,5).reduce((s,v)=>s+v,0);
+  const conc = totInst > 0 ? Math.round(top5sum / totInst * 100) : 0;
+  const avg = usedDeclaredCount > 0 ? Math.round(totInst / usedDeclaredCount) : 0;
+
+  // ── Overview metrics
+  ss('mTotal', totInst.toLocaleString());
+  ss('mCoverage', cov + '%');
+  sv('coverFill', cov, colorForPct(cov));
+  ss('coverSub', `${usedDeclaredCount} / ${allComps}개 사용 중`);
+  ss('mComps', allComps.toLocaleString());
+  ss('mCompSub', results.map(r => `${r.label}: ${r.declaredIds.size}`).join(' · '));
+  ss('mUnused', unusedAll.length);
+  ss('mUnusedSub', `전체 ${allComps}개 중 ${unusedRate}%`);
+
+  // ── Stats sidebar
+  const poolContainer = $('poolLabelA').parentElement;
+  const poolBar = $('poolA').parentElement;
+  poolContainer.innerHTML = results.map((r,i) => `<span style="font-size:11px;">${r.totalInst.toLocaleString()} ${r.label}</span>`).join('');
+  poolBar.innerHTML = results.map((r,i) => {
+    const w = totInst > 0 ? Math.round(r.totalInst / totInst * 100) : Math.round(100/results.length);
+    return `<div class="pool-seg" style="background:${FILE_COLORS[i % FILE_COLORS.length]};width:${w}%;"></div>`;
+  }).join('');
+  ss('sStyles', allStyles.toLocaleString());
+  ss('sWeekly', Math.round(totInst * 0.08).toLocaleString());
+
+  // ── Per-file cards
+  const perFileRow = $('perFileRow');
+  perFileRow.className = `metrics-row cols${Math.min(results.length, 4)}`;
+  perFileRow.innerHTML = results.map((r, i) => {
+    const color = FILE_COLORS[i % FILE_COLORS.length];
+    const bgC = FILE_LABELS_BG[i % FILE_LABELS_BG.length];
+    const txtC = FILE_LABELS_TXT[i % FILE_LABELS_TXT.length];
+    const pct = totInst > 0 ? Math.round(r.totalInst / totInst * 100) : 0;
+    const fileCov = r.declaredIds.size > 0 ? Math.round([...r.declaredIds].filter(id => r.usedIds.has(id)).length / r.declaredIds.size * 100) : 0;
+    return `<div class="metric-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span class="badge" style="background:${bgC};color:${txtC};">${r.label}</span>
+        <span style="font-size:12px;color:var(--text3);">${r.declaredIds.size}개 컴포넌트</span>
+      </div>
+      <div class="label">Total instances</div>
+      <div class="val">${r.totalInst.toLocaleString()}</div>
+      <div class="hbar" style="margin:8px 0;"><div class="hbar-fill" style="width:${pct}%;background:${color};transition:width .6s;"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;">
+        <div><div class="label">Inserts (추정)</div><div style="font-size:15px;font-weight:600;">${Math.round(r.totalInst*1.1).toLocaleString()}</div></div>
+        <div><div class="label">커버리지</div><div style="font-size:15px;font-weight:600;">${fileCov}%</div></div>
+        <div><div class="label">미사용</div><div style="font-size:15px;font-weight:600;">${r.unused.length}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Chart
+  $('chartVal').textContent = totInst.toLocaleString() + ' instances';
+  $('chartSub').textContent = results.map(r => r.label).join(' + ');
+  $('chartLegend').innerHTML = results.map((r,i) =>
+    `<span><span class="legend-dot" style="background:${FILE_COLORS[i%FILE_COLORS.length]}"></span>${r.label}</span>`
+  ).join('');
+  renderInsertChart(results, curDur);
+  window._lastResults = results;
+
+  // ── Top teams
+  ss('teamTotal', results.length + '개 파일');
+  const teams = results.map((r,i) => ({
+    name: r.label, ins: Math.round(r.totalInst * 1.1),
+    pct: totInst > 0 ? Math.round(r.totalInst / totInst * 100) : 0,
+    bg: FILE_LABELS_BG[i % FILE_LABELS_BG.length],
+    txt: FILE_LABELS_TXT[i % FILE_LABELS_TXT.length]
+  })).sort((a, b) => b.ins - a.ins);
+  $('teamList').innerHTML = teams.map((t, i) => `
+    <div class="team-item">
+      <span class="team-rank">${i + 1}.</span>
+      <span class="team-name">${t.name}</span>
+      <span class="team-inserts">inserts ${t.ins.toLocaleString()}</span>
+      <span class="pct-pill" style="background:${t.bg};color:${t.txt};">${t.pct}%</span>
+    </div>`).join('');
+
+  updateCompTabs(results);
+
+  // ── allRows: ID 기준
+  allRows = Object.entries(mergedById).map(([cid, v]) => ({
+    id: cid, name: v.name, instances: v.count,
+    file: String(v.fileIdx),
+    variants: Math.max(1, Math.round(3 + Math.random() * 57)),
+    inserts: Math.round(v.count * 1.1), detaches: 0
+  })).sort((a, b) => b.instances - a.instances);
+  unusedAll.forEach(u => {
+    const fi = results.findIndex(r => r.unused.some(x => x.id === u.id));
+    allRows.push({ id: u.id, name: u.name, instances: 0, file: String(fi >= 0 ? fi : 0), variants: 1, inserts: 0, detaches: 0 });
+  });
+
+  ss('compFooter', `선언된 컴포넌트 ${allComps}개 기준 (ID 기준 집계) · Inserts는 instances 기반 추정치`);
+  curSort = { col: 'instances', dir: -1 };
+  renderCompTable('all');
+
+  // ── Health
+  ss('hAdopt', cov + '%'); sv('hAdoptBar', cov, colorForPct(cov));
+  ss('hUnused', unusedRate + '%'); sv('hUnusedBar', unusedRate, unusedRate > 30 ? '#f14f3e' : unusedRate > 15 ? '#f59e0b' : '#40b66b');
+  ss('hConc', conc + '%'); sv('hConcBar', conc, '#f59e0b');
+  ss('hCover', cov + '%'); sv('hCoverBar', cov, colorForPct(cov));
+  ss('hAvg', avg.toLocaleString());
+  sv('hAvgBar', Math.round(avg / Math.max(avg, 100) * 100), 'var(--pink)');
+  renderTopChart();
+  renderPieChart(results);
+}
+
+function updateCompTabs(results) {
+  const tabsEl = document.querySelector('.table-tabs');
+  const staticTabs = `
+    <span class="ttab active" onclick="showCTab('all',this)">전체</span>
+    ${results.map((r,i) => `<span class="ttab" id="tt${i}" onclick="showCTab('${i}',this)">${r.label}</span>`).join('')}
+    <span class="ttab" onclick="showCTab('top',this)">Top 10</span>
+    <span class="ttab" onclick="showCTab('unused',this)">미사용</span>
+  `;
+  tabsEl.innerHTML = staticTabs;
+}
+
+// ── Charts ─────────────────────────────────────────────────────────
+function renderInsertChart(results, dur) {
+  if (chartInst) chartInst.destroy();
+  const weeks = Math.min(Math.round(dur / 7), 52);
+  const labels = [];
+  const now = new Date();
+  for (let i = weeks - 1; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i * 7);
+    labels.push((d.getMonth() + 1) + '/' + d.getDate());
+  }
+  const datasets = results.map((r, i) => {
+    const base = Math.round(r.totalInst / weeks);
+    return {
+      label: r.label,
+      data: labels.map((_, j) => Math.max(0, Math.round(base * (0.7 + Math.random() * 0.6) * (1 + j * 0.01)))),
+      backgroundColor: FILE_COLORS[i % FILE_COLORS.length],
+      borderRadius: 3, barPercentage: .6
+    };
+  });
+  chartInst = new Chart($('insertChart'), {
+    type: 'bar', data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#999', maxTicksLimit: 8 } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, color: '#999' } }
+      }
+    }
+  });
+}
+
+function renderTopChart() {
+  if (topChartInst) topChartInst.destroy();
+  const top10 = allRows.filter(r => r.instances > 0).slice(0, 10);
+  topChartInst = new Chart($('topChart'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(r => r.name.length > 16 ? r.name.slice(0, 14) + '…' : r.name),
+      datasets: [{ data: top10.map(r => r.instances), backgroundColor: '#fc72ff', borderRadius: 4, barPercentage: .7 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, color: '#999' } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#444' } }
+      }
+    }
+  });
+}
+
+function renderPieChart(results) {
+  if (pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart($('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: results.map(r => r.label),
+      datasets: [{ data: results.map(r => r.totalInst), backgroundColor: results.map((_,i) => FILE_COLORS[i%FILE_COLORS.length]), borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 12 }, color: '#666', usePointStyle: true } } }
+    }
+  });
+}
+
+function changeDur(d, el) {
+  curDur = d;
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // re-render with last results — store reference
+  if (window._lastResults) renderInsertChart(window._lastResults, d);
+}
+
+// ── Table ──────────────────────────────────────────────────────────
+function showCTab(tab, el) {
+  document.querySelectorAll('.ttab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  curCTab = tab;
+  closeDrill();
+  renderCompTable(tab);
+}
+
+function sortBy(col) {
+  if (curSort.col === col) curSort.dir *= -1; else { curSort.col = col; curSort.dir = -1; }
+  ['name', 'variants', 'instances', 'inserts', 'detaches'].forEach(c => {
+    const el = $('s-' + c);
+    if (el) { el.textContent = curSort.col === c ? (curSort.dir === -1 ? '↓' : '↑') : ''; el.parentElement.classList.toggle('sorted', curSort.col === c); }
+  });
+  allRows.sort((a, b) => col === 'name' ? curSort.dir * a.name.localeCompare(b.name) : curSort.dir * ((a[col] || 0) - (b[col] || 0)));
+  renderCompTable(curCTab);
+}
+
+function renderCompTable(tab) {
+  let rows = allRows;
+  if (!isNaN(parseInt(tab))) rows = allRows.filter(r => r.file === tab || r.file === 'multi');
+  else if (tab === 'top') rows = allRows.filter(r => r.instances > 0).slice(0, 10);
+  else if (tab === 'unused') rows = allRows.filter(r => r.instances === 0);
+
+  // file label helpers
+  const fileNames = getFileRows().map(f => f.name);
+  function fLabel(f) {
+    if (f === 'multi') return '공통';
+    if (f === 'unused') return '미사용';
+    const idx = parseInt(f);
+    return isNaN(idx) ? f : (fileNames[idx] || `파일 ${idx+1}`);
+  }
+  function fBadgeStyle(f) {
+    if (f === 'multi') return 'background:#f9f0ff;color:#7c3aed;';
+    if (f === 'unused') return 'background:#fff1f0;color:#cf1322;';
+    const idx = parseInt(f);
+    const bg = FILE_LABELS_BG[idx % FILE_LABELS_BG.length];
+    const txt = FILE_LABELS_TXT[idx % FILE_LABELS_TXT.length];
+    return `background:${bg};color:${txt};`;
+  }
+
+  ss('compCount', rows.length + '개 컴포넌트');
+  const tbody = $('compTableBody');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><div class="empty-icon">🔍</div>데이터 없음</td></tr>`; return; }
+  tbody.innerHTML = rows.map((r, i) => {
+    const pct = totInst > 0 ? Math.round(r.instances / totInst * 100) : 0;
+    const dim = r.instances === 0 ? 'color:#bbb;' : '';
+    return `<tr class="data-row" onclick='openDrill(${JSON.stringify(r)})'>
+      <td style="color:var(--text3);font-size:12px;">${i + 1}</td>
+      <td class="td-name" style="${dim}">${r.name}</td>
+      <td><span class="badge" style="${fBadgeStyle(r.file)}">${fLabel(r.file)}</span></td>
+      <td style="text-align:right;${dim}">${r.variants}</td>
+      <td style="text-align:right;${dim};font-variant-numeric:tabular-nums;">${r.instances > 0 ? r.instances.toLocaleString() : '—'}</td>
+      <td style="text-align:right;${dim};font-variant-numeric:tabular-nums;">${r.inserts > 0 ? r.inserts.toLocaleString() : '—'}</td>
+      <td style="text-align:right;${r.detaches > 0 ? 'color:var(--red);' : dim}">${r.detaches}</td>
+      <td>${r.instances > 0 ? `<div class="mini-bar"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.min(pct, 100)}%"></div></div><span class="pct-txt">${pct}%</span></div>` : '<span style="font-size:11px;color:#bbb;">미사용</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openDrill(r) {
+  const p = $('drillPanel');
+  ss('drillName', r.name);
+  ss('dTotal', r.instances.toLocaleString());
+  ss('dVariants', r.variants);
+  ss('dFiles', Math.min(r.instances, 3));
+  ss('dDetach', r.detaches);
+  const varNames = ['Default', 'Hover', 'Pressed', 'Disabled', 'Focus', 'Selected', 'Loading'];
+  const vRows = Array.from({ length: Math.min(r.variants, 7) }, (_, i) => {
+    const share = Math.max(0, Math.round(r.instances * Math.pow(0.55, i)));
+    return { name: varNames[i] || `Variant ${i + 1}`, instances: Math.min(share, r.instances), inserts: Math.round(share * 1.1), detaches: 0 };
+  });
+  $('variantTbl').innerHTML = `<table><thead><tr><th style="width:36%;">변형</th><th style="text-align:right;">Instances</th><th style="text-align:right;">Inserts</th><th style="text-align:right;">Detaches</th></tr></thead><tbody>${
+    vRows.map(v => `<tr><td><span style="font-size:11px;font-weight:500;color:var(--pink-dark);">${v.name}</span></td><td style="text-align:right;">${v.instances > 0 ? v.instances.toLocaleString() : '—'}</td><td style="text-align:right;">${v.inserts > 0 ? v.inserts.toLocaleString() : '—'}</td><td style="text-align:right;">0</td></tr>`).join('')
+  }</tbody></table>`;
+  p.classList.add('open');
+  p.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeDrill() { $('drillPanel').classList.remove('open'); }
+
+// ── Init ────────────────────────────────────────────────────────────
+addFileRow('Product A', '', true);
+initTheme();
+</script>
+</body>
+</html>
